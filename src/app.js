@@ -45,6 +45,7 @@ app.post('/participants', async (req, res) => {
         };
         await db.collection("messages").insertOne(message);
         res.sendStatus(201);
+        
     } catch (err) {
         console.log(err.message);
         res.status(500).send(err.message);
@@ -65,7 +66,7 @@ app.get('/participants', async (req, res) => {
 
 app.post('/messages', async (req, res) => {
     const { to, text, type } = req.body;
-    const from = req.headers.User;
+    const from = req.headers.user;
 
     const messageSchema = joi.object({
         to: joi.string().required(),
@@ -92,6 +93,7 @@ app.post('/messages', async (req, res) => {
         };
         await db.collection("messages").insertOne(newMessage);
         res.sendStatus(201);
+
     } catch (err) {
         console.log(err.message);
         res.status(500).send(err.message);
@@ -99,22 +101,25 @@ app.post('/messages', async (req, res) => {
 });
 
 app.get('/messages', async (req, res) => {
-    const user = req.headers.User;
-    const limit = parseInt(req.query.limit);
+    const user = req.headers.user;
+    const limit = req.query.limit;
 
-    if (isNaN(limit) || limit <= 0) return res.sendStatus(422);
+    if (parseInt(limit) <= 0) return res.sendStatus(422);
+    if(isNaN(limit)){
+        if(limit != undefined) return res.sendStatus(422);
+    }
 
     try {
-        messages = await db.collection("messages")
+        const messages = await db.collection("messages")
             .find({
                 $or: [
                     { to: "Todos" },
-                    { from: user },
                     { to: user },
-                    { type: "public" }
+                    { from: user },
+                    { type: "message" }
                 ]
             })
-            .limit(limit).toArray();
+            .limit(parseInt(limit)).toArray();
         res.send(messages);
 
     } catch (err) {

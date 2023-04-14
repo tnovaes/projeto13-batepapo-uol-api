@@ -20,17 +20,18 @@ mongoClient.connect()
 
 // Endpoints
 app.post('/participants', async (req, res) => {
+    const { name } = req.body;
+
     const participantSchema = joi.object({
         name: joi.string().required()
     });
 
     const validation = participantSchema.validate(req.body);
     if (validation.error) return res.status(422).send(validation.error.details[0].message);
-    const { name } = req.body
 
     try {
-        const registered = await db.collection("participants").findOne({name});
-        if (registered) return res.status(409).send("Nome de usuário já existe.")
+        const registered = await db.collection("participants").findOne({ name });
+        if (registered) return res.status(409).send("Nome de usuário já existe.");
 
         const newParticipant = { name, lastStatus: Date.now() };
         await db.collection("participants").insertOne(newParticipant);
@@ -55,6 +56,66 @@ app.get('/participants', async (req, res) => {
     try {
         participants = await db.collection("participants").find().toArray();
         res.send(participants);
+
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+app.post('/messages', async (req, res) => {
+    const { to, text, type } = req.body;
+    const from = req.headers.User;
+
+    const messageSchema = joi.object({
+        to: joi.string().required(),
+        text: joi.string().required(),
+        type: joi.string().valid("message", "private_message").required()
+    });
+
+    const validation = messageSchema.validate(req.body, { abortEarly: false });
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
+    try {
+        const registered = await db.collection("participants").findOne({ name: from });
+        if (!registered) return res.sendStatus(422);
+
+        const newMessage = {
+            from,
+            to,
+            text,
+            type,
+            time: dayjs().format("HH:mm:ss")
+        };
+        await db.collection("messages").insertOne(newMessage);
+        res.sendStatus(201);
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send(err.message);
+    }
+});
+
+app.get('/messages', async (req, res) => {
+    const user = req.headers.User;
+    const limit = parseInt(req.query.limit);
+
+    if (isNaN(limit) || limit <= 0) return res.sendStatus(422);
+
+    try {
+        messages = await db.collection("messages")
+            .find({
+                $or: [
+                    { to: "Todos" },
+                    { from: user },
+                    { to: user },
+                    { type: "public" }
+                ]
+            })
+            .limit(limit).toArray();
+        res.send(messages);
 
     } catch (err) {
         console.log(err.message);

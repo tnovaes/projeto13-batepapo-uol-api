@@ -154,6 +154,8 @@ setInterval(async () => {
     try {
         const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray;
 
+        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
+
         if (dcUsers) {
             dcUsers.forEach((u) => {
                 db.collection("messages").insertOne({
@@ -165,8 +167,6 @@ setInterval(async () => {
                 });
             });
         }
-
-        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
 
     } catch (err) {
         console.log(err.message);

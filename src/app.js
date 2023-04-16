@@ -45,7 +45,7 @@ app.post('/participants', async (req, res) => {
         };
         await db.collection("messages").insertOne(message);
         res.sendStatus(201);
-        
+
     } catch (err) {
         console.log(err.message);
         res.status(500).send(err.message);
@@ -105,8 +105,8 @@ app.get('/messages', async (req, res) => {
     const limit = req.query.limit;
 
     if (parseInt(limit) <= 0) return res.sendStatus(422);
-    if(isNaN(limit)){
-        if(limit != undefined) return res.sendStatus(422);
+    if (isNaN(limit)) {
+        if (limit != undefined) return res.sendStatus(422);
     }
 
     try {
@@ -127,6 +127,26 @@ app.get('/messages', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
+
+app.post('/status', async (req, res) => {
+    const user = req.headers.user;
+
+    if (!user) return res.sendStatus(404);
+
+    const lastStatus = Date.now();
+
+    try {
+        const update = await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus } });
+
+        if (update.matchedCount === 0) return res.sendStatus(404);
+
+        res.sendStatus(200);
+
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send(err.message);
+    }
+})
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000

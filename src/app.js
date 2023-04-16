@@ -156,7 +156,7 @@ setInterval(async () => {
 
         if (dcUsers) {
             dcUsers.forEach((u) => {
-                db.collection("participants").insertOne({
+                db.collection("messages").insertOne({
                     from: u.name,
                     to: 'Todos',
                     text: 'sai da sala...',

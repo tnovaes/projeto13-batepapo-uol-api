@@ -138,7 +138,7 @@ app.post('/status', async (req, res) => {
     try {
         const update = await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus } });
 
-        if (update.matchedCount === 0) return res.sendStatus(404);
+        if (!update.matchedCount) return res.sendStatus(404);
 
         res.sendStatus(200);
 
@@ -146,7 +146,34 @@ app.post('/status', async (req, res) => {
         console.log(err.message);
         res.status(500).send(err.message);
     }
-})
+});
+
+setInterval(async () => {
+    const disconnected = Date.now() - 10000;
+
+    try {
+        const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray;
+
+        if (dcUsers) {
+            dcUsers.forEach(async u =>
+                await db.collection("participants").insertOne({
+                    from: u.name,
+                    to: 'Todos',
+                    text: 'sai da sala...',
+                    type: 'status',
+                    time: dayjs().format("HH:mm:ss")
+                })
+            );
+        }
+
+        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
+
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).send(err.message);
+    }
+
+}, 15000)
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000

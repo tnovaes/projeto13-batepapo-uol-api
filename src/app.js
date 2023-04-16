@@ -155,22 +155,21 @@ setInterval(async () => {
         const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray;
 
         if (dcUsers) {
-            dcUsers.forEach(async u =>
-                await db.collection("participants").insertOne({
+            dcUsers.forEach((u) => {
+                db.collection("participants").insertOne({
                     from: u.name,
                     to: 'Todos',
                     text: 'sai da sala...',
                     type: 'status',
                     time: dayjs().format("HH:mm:ss")
-                })
-            );
+                });
+            });
         }
 
         await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
 
     } catch (err) {
         console.log(err.message);
-        res.status(500).send(err.message);
     }
 
 }, 15000)

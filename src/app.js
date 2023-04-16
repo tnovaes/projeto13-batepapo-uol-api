@@ -152,9 +152,9 @@ setInterval(async () => {
     const disconnected = Date.now() - 10000;
 
     try {
-        const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray;
+        const dcUsers = await db.collection("participants").find({ lastStatus: { $lte: disconnected } }).toArray;
 
-        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
+        await db.collection("participants").deleteMany({ lastStatus: { $lte: disconnected } });
 
         if (dcUsers) {
             dcUsers.forEach((u) => {

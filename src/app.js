@@ -4,7 +4,6 @@ import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
 import dayjs from "dayjs";
-import { stripHtml } from "string-strip-html";
 
 // Criação do servidor
 const app = express();
@@ -22,7 +21,6 @@ mongoClient.connect()
 // Endpoints
 app.post('/participants', async (req, res) => {
     const { name } = req.body;
-    name = stripHtml(name).trim();
 
     const participantSchema = joi.object({
         name: joi.string().required()
@@ -69,10 +67,6 @@ app.get('/participants', async (req, res) => {
 app.post('/messages', async (req, res) => {
     const { to, text, type } = req.body;
     const from = req.headers.user;
-
-    to = stripHtml(to).trim();
-    text = stripHtml(text).trim();
-    type = stripHtml(type).trim();
 
     const messageSchema = joi.object({
         to: joi.string().required(),
@@ -179,10 +173,6 @@ app.put('/messages/:id', async (req, res) => {
     const { to, text, type } = req.body;
     const from = req.headers.user;
     const id = req.params.id;
-
-    to = stripHtml(to).trim();
-    text = stripHtml(text).trim();
-    type = stripHtml(type).trim();
 
     const messageSchema = joi.object({
         to: joi.string().required(),

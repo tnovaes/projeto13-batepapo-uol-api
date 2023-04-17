@@ -206,31 +206,31 @@ app.put('/messages/:id', async (req, res) => {
     }
 });
 
-// setInterval(async () => {
-//     try {
-//         const disconnected = Date.now() - 10000;
+setInterval(async () => {
+    try {
+        const disconnected = Date.now() - 10000;
 
-//         const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray();
+        const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray();
 
-//         await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
+        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
 
-//         if (dcUsers) {
-//             dcUsers.forEach(async (u) => {
-//                 await db.collection("messages").insertOne({
-//                     from: u.name,
-//                     to: 'Todos',
-//                     text: 'sai da sala...',
-//                     type: 'status',
-//                     time: dayjs().format("HH:mm:ss")
-//                 });
-//             });
-//         }
+        if (dcUsers) {
+            dcUsers.forEach(async (u) => {
+                await db.collection("messages").insertOne({
+                    from: u.name,
+                    to: 'Todos',
+                    text: 'sai da sala...',
+                    type: 'status',
+                    time: dayjs().format("HH:mm:ss")
+                });
+            });
+        }
 
-//     } catch (err) {
-//         console.log(err.message);
-//     }
+    } catch (err) {
+        console.log(err.message);
+    }
 
-// }, 15000)
+}, 15000)
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000

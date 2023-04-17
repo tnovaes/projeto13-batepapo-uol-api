@@ -149,7 +149,7 @@ app.post('/status', async (req, res) => {
 });
 
 app.delete('/messages/:id', async (req, res) => {
-    const user = req.headers.user;
+    const from = req.headers.user;
     const id = req.params.id;
 
     try {
@@ -157,43 +157,80 @@ app.delete('/messages/:id', async (req, res) => {
 
         if (!message) return res.sendStatus(404);
 
-        if (message.from !== user) return res.sendStatus(401);
+        if (message.from !== from) return res.sendStatus(401);
 
         const { deletedCount } = await db.collection("messages").deleteOne({ _id: new ObjectId(id) });
 
-        if(deletedCount) return res.sendStatus(200);
-        
+        if (deletedCount) return res.sendStatus(200);
+
     } catch (err) {
         console.log(err.message);
         res.status(500).send(err.message);
     }
 });
 
-setInterval(async () => {
+app.put('/messages/:id', async (req, res) => {
+    const { to, text, type } = req.body;
+    const from = req.headers.user;
+    const id = req.params.id;
+
+    const messageSchema = joi.object({
+        to: joi.string().required(),
+        text: joi.string().required(),
+        type: joi.string().valid("message", "private_message").required()
+    });
+
+    const validation = messageSchema.validate(req.body, { abortEarly: false });
+    if (validation.error) {
+        const errors = validation.error.details.map((detail) => detail.message);
+        return res.status(422).send(errors);
+    }
+
     try {
-        const disconnected = Date.now() - 10000;
+        const editMessage = await db.collection("messages").findOne({ _id: new ObjectId(id) });
+        if (!editMessage) return res.sendStatus(404);
+        if (editMessage.from !== from) return res.sendStatus(401);
 
-        const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray();
+        const newMessage = {
+            to,
+            text,
+            type,
+        };
 
-        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
-
-        if (dcUsers) {
-            dcUsers.forEach(async (u) => {
-                await db.collection("messages").insertOne({
-                    from: u.name,
-                    to: 'Todos',
-                    text: 'sai da sala...',
-                    type: 'status',
-                    time: dayjs().format("HH:mm:ss")
-                });
-            });
-        }
+        await db.collection("messages").updateOne({ _id: new ObjectId(id) }, { $set: newMessage });
+        res.sendStatus(200);
 
     } catch (err) {
         console.log(err.message);
+        res.status(500).send(err.message);
     }
+});
 
-}, 15000)
+// setInterval(async () => {
+//     try {
+//         const disconnected = Date.now() - 10000;
+
+//         const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray();
+
+//         await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
+
+//         if (dcUsers) {
+//             dcUsers.forEach(async (u) => {
+//                 await db.collection("messages").insertOne({
+//                     from: u.name,
+//                     to: 'Todos',
+//                     text: 'sai da sala...',
+//                     type: 'status',
+//                     time: dayjs().format("HH:mm:ss")
+//                 });
+//             });
+//         }
+
+//     } catch (err) {
+//         console.log(err.message);
+//     }
+
+// }, 15000)
 
 // Deixa o app escutando, à espera de requisições
 const PORT = 5000

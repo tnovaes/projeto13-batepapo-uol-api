@@ -149,16 +149,16 @@ app.post('/status', async (req, res) => {
 });
 
 setInterval(async () => {
-    const disconnected = Date.now() - 10000;
-
     try {
-        const dcUsers = await db.collection("participants").find({ lastStatus: { $lte: disconnected } }).toArray;
+        const disconnected = Date.now() - 10000;
 
-        await db.collection("participants").deleteMany({ lastStatus: { $lte: disconnected } });
+        const dcUsers = await db.collection("participants").find({ lastStatus: { $lt: disconnected } }).toArray();
+
+        await db.collection("participants").deleteMany({ lastStatus: { $lt: disconnected } });
 
         if (dcUsers) {
-            dcUsers.forEach((u) => {
-                db.collection("messages").insertOne({
+            dcUsers.forEach(async (u) => {
+                await db.collection("messages").insertOne({
                     from: u.name,
                     to: 'Todos',
                     text: 'sai da sala...',
